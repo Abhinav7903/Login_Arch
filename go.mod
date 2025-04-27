@@ -7,6 +7,7 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/lib/pq v1.10.9
 	github.com/spf13/viper v1.20.1
+	golang.org/x/crypto v0.32.0
 )
 
 require (

@@ -4,6 +4,10 @@ import "net/http"
 
 func (s *Server) RegisterRoutes() {
 	s.router.HandleFunc("/ping", s.HandlePong()).Methods(http.MethodGet)
+
+	// User routes
+	s.router.HandleFunc("/users", s.HandleCreateUser()).Methods(http.MethodPost)
+	s.router.HandleFunc("/users", s.HandleGetUser()).Methods(http.MethodGet)
 }
 
 func (s *Server) HandlePong() http.HandlerFunc {
