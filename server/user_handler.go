@@ -73,7 +73,7 @@ func (s *Server) HandleLogin() http.HandlerFunc {
 
 		user, err := s.user.Login(loginUser)
 		if err != nil {
-			http.Error(w, "Authentication failed", http.StatusUnauthorized)
+			s.respond(w, "Invalid email or password", http.StatusUnauthorized, nil)
 			slog.Warn("Login failed", "email", loginUser.Email, "error", err)
 			return
 		}
@@ -81,18 +81,20 @@ func (s *Server) HandleLogin() http.HandlerFunc {
 		// Check if user has an active session
 		sessionExists, err := s.redis.CheckSession(user.Email)
 		if err != nil {
-			http.Error(w, "In---ternal error", http.StatusInternalServerError)
+			s.respond(w, "Internal error", http.StatusInternalServerError, nil)
 			return
 		}
 		if sessionExists {
-			http.Error(w, "User already logged in elsewhere", http.StatusConflict)
+			s.respond(w, "User already logged in", http.StatusConflict, nil)
+			slog.Warn("User already logged in", "email", user.Email)
 			return
 		}
 
 		// Create a session token
 		token, err := s.redis.GenerateToken(user.Email)
 		if err != nil {
-			http.Error(w, "Internal error", http.StatusInternalServerError)
+			s.respond(w, "Internal error", http.StatusInternalServerError, nil)
+			slog.Error("Failed to generate token", "email", user.Email, "error", err)
 			return
 		}
 
