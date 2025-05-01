@@ -37,21 +37,21 @@ func (p *Postgres) CreateUser(user factory.User) error {
 }
 
 // Login checks if the user exists in the database
-func (p *Postgres) Login(data factory.User) (bool, error) {
-	// Get hashed password from DB
-	var storedEmail, storedHashedPassword string
-	row := p.dbConn.QueryRow("SELECT email, password FROM users WHERE email = $1", data.Email)
-	err := row.Scan(&storedEmail, &storedHashedPassword)
+func (p *Postgres) Login(data factory.User) (factory.User, error) {
+	var user factory.User
+	var hashedPassword string
+
+	row := p.dbConn.QueryRow("SELECT email, username, password FROM users WHERE email = $1", data.Email)
+	err := row.Scan(&user.Email, &user.Name, &hashedPassword)
 	if err != nil {
-		return false, fmt.Errorf("error retrieving user: %w", err)
+		return factory.User{}, fmt.Errorf("user not found: %w", err)
 	}
 
-	// Verify password
-	if !users.VerifyPassword(storedHashedPassword, data.Password) {
-		return false, fmt.Errorf("invalid password")
+	if !users.VerifyPassword(hashedPassword, data.Password) {
+		return factory.User{}, fmt.Errorf("invalid password")
 	}
 
-	return true, nil
+	return user, nil
 }
 
 // GetUser retrieves a user by email from the database

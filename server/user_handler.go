@@ -71,26 +71,49 @@ func (s *Server) HandleLogin() http.HandlerFunc {
 			return
 		}
 
-		ok, err := s.user.Login(loginUser)
+		user, err := s.user.Login(loginUser)
 		if err != nil {
 			http.Error(w, "Authentication failed", http.StatusUnauthorized)
 			slog.Warn("Login failed", "email", loginUser.Email, "error", err)
 			return
 		}
 
-		if !ok {
-			http.Error(w, "Invalid email or password", http.StatusUnauthorized)
-			slog.Warn("Invalid login attempt", "email", loginUser.Email)
+		// Check if user has an active session
+		sessionExists, err := s.redis.CheckSession(user.Email)
+		if err != nil {
+			http.Error(w, "In---ternal error", http.StatusInternalServerError)
+			return
+		}
+		if sessionExists {
+			http.Error(w, "User already logged in elsewhere", http.StatusConflict)
+			return
+		}
+
+		// Create a session token
+		token, err := s.redis.GenerateToken(user.Email)
+		if err != nil {
+			http.Error(w, "Internal error", http.StatusInternalServerError)
+			return
+		}
+
+		// Store session in Redis
+		if err := s.redis.StoreSession(user.Email, token); err != nil {
+			http.Error(w, "Internal error", http.StatusInternalServerError)
 			return
 		}
 
 		s.respond(
 			w,
-			ResponseMsg{Message: "Login successful"},
+			ResponseMsg{
+				Message: "Login successful",
+				Data: map[string]string{
+					"email": user.Email,
+					"token": token,
+				},
+			},
 			http.StatusOK,
 			nil,
 		)
-		slog.Info("User logged in", "email", loginUser.Email)
 	}
 }
 
@@ -160,6 +183,45 @@ func (s *Server) HandleGetUser() http.HandlerFunc {
 			ResponseMsg{
 				Message: "success",
 				Data:    user,
+			},
+			http.StatusOK,
+			nil,
+		)
+	}
+}
+
+// LogoutHandler handles user logout
+func (s *Server) HandleLogout() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		email := r.URL.Query().Get("email")
+		if email == "" {
+			s.respond(
+				w,
+				ResponseMsg{
+					Message: "Email parameter is required",
+				},
+				http.StatusBadRequest,
+				nil,
+			)
+			return
+		}
+
+		if err := s.redis.DeleteSession(email); err != nil {
+			s.respond(
+				w,
+				ResponseMsg{
+					Message: "Error deleting session",
+				},
+				http.StatusInternalServerError,
+				nil,
+			)
+			return
+		}
+
+		s.respond(
+			w,
+			ResponseMsg{
+				Message: "Logout successful",
 			},
 			http.StatusOK,
 			nil,
