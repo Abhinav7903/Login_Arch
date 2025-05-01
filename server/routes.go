@@ -8,6 +8,7 @@ func (s *Server) RegisterRoutes() {
 	// User routes
 	s.router.HandleFunc("/users", s.HandleCreateUser()).Methods(http.MethodPost)
 	s.router.HandleFunc("/users", s.HandleGetUser()).Methods(http.MethodGet)
+	s.router.HandleFunc("/login", s.HandleLogin()).Methods(http.MethodPost)
 }
 
 func (s *Server) HandlePong() http.HandlerFunc {

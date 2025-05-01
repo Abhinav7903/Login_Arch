@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"LoginArch/factory"
+	"LoginArch/pkg/users"
 	"fmt"
 )
 
@@ -33,6 +34,24 @@ func (p *Postgres) CreateUser(user factory.User) error {
 	}
 
 	return nil
+}
+
+// Login checks if the user exists in the database
+func (p *Postgres) Login(data factory.User) (bool, error) {
+	// Get hashed password from DB
+	var storedEmail, storedHashedPassword string
+	row := p.dbConn.QueryRow("SELECT email, password FROM users WHERE email = $1", data.Email)
+	err := row.Scan(&storedEmail, &storedHashedPassword)
+	if err != nil {
+		return false, fmt.Errorf("error retrieving user: %w", err)
+	}
+
+	// Verify password
+	if !users.VerifyPassword(storedHashedPassword, data.Password) {
+		return false, fmt.Errorf("invalid password")
+	}
+
+	return true, nil
 }
 
 // GetUser retrieves a user by email from the database
