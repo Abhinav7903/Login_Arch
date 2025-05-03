@@ -9,7 +9,7 @@ import (
 // CreateUser inserts a new user into the database
 func (p *Postgres) CreateUser(user factory.User) error {
 	// Start a transaction
-	tx, err := p.dbConn.Begin()
+	tx, err := p.DbConn.Begin()
 	if err != nil {
 		return fmt.Errorf("error starting transaction: %w", err)
 	}
@@ -41,7 +41,7 @@ func (p *Postgres) Login(data factory.User) (factory.User, error) {
 	var user factory.User
 	var hashedPassword string
 
-	row := p.dbConn.QueryRow("SELECT email, username, password FROM users WHERE email = $1", data.Email)
+	row := p.DbConn.QueryRow("SELECT email, username, password FROM users WHERE email = $1", data.Email)
 	err := row.Scan(&user.Email, &user.Name, &hashedPassword)
 	if err != nil {
 		return factory.User{}, fmt.Errorf("user not found: %w", err)
@@ -57,7 +57,7 @@ func (p *Postgres) Login(data factory.User) (factory.User, error) {
 // GetUser retrieves a user by email from the database
 func (p *Postgres) GetUser(email string) (factory.User, error) {
 	// Start a transaction
-	tx, err := p.dbConn.Begin()
+	tx, err := p.DbConn.Begin()
 	if err != nil {
 		return factory.User{}, fmt.Errorf("error starting transaction: %w", err)
 	}

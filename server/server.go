@@ -57,7 +57,11 @@ func Run(env *string) {
 	slog.SetDefault(logger) // Set the logger as the default
 
 	// Initialize dependencies
-	postgres := postgres.NewPostgres()
+	postgres, err := postgres.NewPostgres()
+	if err != nil {
+		logger.Error("Error initializing Postgres", "error", err)
+		return
+	}
 	redis := redis.NewRedis(env)
 
 	server := &Server{
