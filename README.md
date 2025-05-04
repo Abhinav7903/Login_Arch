@@ -65,4 +65,5 @@ Redis will be used for managing sessions in the LoginArch application.
 
 
 
-
+### Future Improvements
+![alt text](image.png)
