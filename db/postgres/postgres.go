@@ -31,6 +31,28 @@ func NewPostgres() (*Postgres, error) {
 
 // createConnection establishes a connection to the PostgreSQL database
 // and returns the connection object.
+// createConnection establishes a connection to a PostgreSQL database using the connection
+// string provided in the "postgresURL" configuration key. It configures the connection pool
+// with optional tuning parameters and verifies the connection by pinging the database.
+//
+// Returns:
+//   - *sql.DB: A pointer to the database connection object.
+//   - error: An error object if the connection fails or the database is unreachable.
+//
+// Connection Pool Settings:
+//   - MaxIdleConns: Sets the maximum number of idle connections (default: 10).
+//   - MaxOpenConns: Sets the maximum number of open connections (default: 50).
+//   - ConnMaxLifetime: Sets the maximum lifetime of a connection (default: 0, no limit).
+//
+// Logs:
+//   - Logs a success message with the database URL if the connection is established successfully.
+//
+// Example:
+//   db, err := createConnection()
+//   if err != nil {
+//       log.Fatalf("Failed to connect to database: %v", err)
+//   }
+//   defer db.Close()
 func createConnection() (*sql.DB, error) {
 	db, err := sql.Open("postgres", viper.GetString("postgresURL"))
 	if err != nil {
